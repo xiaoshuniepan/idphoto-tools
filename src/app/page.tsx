@@ -36,6 +36,24 @@ const tools = [
     tagColor: "#16a34a",
     keywords: ["30KB", "100KB", "200KB", "压缩"],
   },
+  {
+    href: "/print-layout",
+    icon: "🖨️",
+    title: "排版打印",
+    desc: "一寸8张/二寸4张自动排版，输出300dpi高清图，直接发打印店",
+    tag: "打印必备",
+    tagColor: "#7c3aed",
+    keywords: ["一寸8张", "二寸4张", "A4排版", "5寸相纸"],
+  },
+  {
+    href: "/beauty",
+    icon: "✨",
+    title: "证件照美颜",
+    desc: "磨皮、美白、亮度、对比度一键调整，多种预设效果实时预览",
+    tag: "新上线",
+    tagColor: "#db2777",
+    keywords: ["磨皮", "美白", "亮度", "对比度"],
+  },
 ];
 
 const features = [

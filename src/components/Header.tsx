@@ -7,6 +7,8 @@ const tools = [
   { href: "/change-bg", label: "换底色" },
   { href: "/crop", label: "尺寸裁剪" },
   { href: "/compress", label: "压缩KB" },
+  { href: "/print-layout", label: "排版打印" },
+  { href: "/beauty", label: "美颜" },
 ];
 
 export default function Header() {
