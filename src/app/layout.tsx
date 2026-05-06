@@ -4,6 +4,8 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import JsonLd from "@/components/JsonLd";
+import { organizationJsonLd, siteJsonLd } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://pickerme.cn"),
@@ -40,6 +42,14 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://pickerme.cn",
   },
+  verification: {
+    // Set NEXT_PUBLIC_BAIDU_VERIFICATION / NEXT_PUBLIC_GOOGLE_VERIFICATION
+    // in Vercel env vars after registering with each search console.
+    google: process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION,
+    other: process.env.NEXT_PUBLIC_BAIDU_VERIFICATION
+      ? { "baidu-site-verification": process.env.NEXT_PUBLIC_BAIDU_VERIFICATION }
+      : undefined,
+  },
 };
 
 export default function RootLayout({
@@ -50,6 +60,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
+        <JsonLd data={[siteJsonLd(), organizationJsonLd()]} />
         <Header />
         <main style={{ minHeight: "calc(100vh - 60px - 220px)" }}>
           {children}

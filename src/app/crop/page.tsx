@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
 import CropTool from "@/components/CropTool";
+import JsonLd from "@/components/JsonLd";
 import { toolJsonLd } from "@/lib/jsonLd";
+import { cropFaqs } from "@/content/faqs";
 
 export const metadata: Metadata = {
   title: "证件照裁剪 — 一寸二寸护照签证标准尺寸",
@@ -34,11 +36,13 @@ const seoText = (
 export default function CropPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <ToolLayout
         title="证件照裁剪"
         desc="支持一寸、二寸、护照、驾照、美签等 20+ 标准尺寸，拖动选框调整位置，输出 300dpi 高清图片。"
+        slug="/crop"
         seoText={seoText}
+        faqs={cropFaqs}
       >
         <CropTool />
       </ToolLayout>

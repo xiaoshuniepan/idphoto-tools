@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
 import RemoveBgTool from "@/components/RemoveBgTool";
+import JsonLd from "@/components/JsonLd";
 import { toolJsonLd } from "@/lib/jsonLd";
+import { removeBgFaqs } from "@/content/faqs";
 
 export const metadata: Metadata = {
   title: "在线AI抠图 — 自动去除图片背景，免费透明PNG",
@@ -30,11 +32,13 @@ const seoText = (
 export default function RemoveBgPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <ToolLayout
         title="AI 智能抠图"
         desc="自动识别前景，一键去除背景，输出透明 PNG。支持人像、商品、动物等各类图片。"
+        slug="/remove-bg"
         seoText={seoText}
+        faqs={removeBgFaqs}
       >
         <RemoveBgTool />
       </ToolLayout>

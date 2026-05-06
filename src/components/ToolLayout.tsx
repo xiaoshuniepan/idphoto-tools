@@ -1,18 +1,44 @@
+import FaqSection from "./FaqSection";
+import JsonLd from "./JsonLd";
+import { breadcrumbJsonLd, faqJsonLd, type FaqItem } from "@/lib/jsonLd";
+
 interface ToolLayoutProps {
   title: string;
   desc: string;
   children: React.ReactNode;
   seoText?: React.ReactNode;
+  /** Slug appended to https://pickerme.cn for canonical breadcrumb (e.g. "/change-bg") */
+  slug?: string;
+  /** Optional FAQ — renders both visible accordion and FAQPage JSON-LD */
+  faqs?: FaqItem[];
 }
+
+const SITE_URL = "https://pickerme.cn";
 
 export default function ToolLayout({
   title,
   desc,
   children,
   seoText,
+  slug,
+  faqs,
 }: ToolLayoutProps) {
+  const breadcrumb = slug
+    ? breadcrumbJsonLd([
+        { name: "首页", url: SITE_URL },
+        { name: title, url: `${SITE_URL}${slug}` },
+      ])
+    : null;
+
+  const faqSchema = faqs && faqs.length > 0 ? faqJsonLd(faqs) : null;
+  const schemas: object[] = [];
+  if (breadcrumb) schemas.push(breadcrumb);
+  if (faqSchema) schemas.push(faqSchema);
+
   return (
     <div style={{ maxWidth: 900, margin: "0 auto", padding: "40px 20px" }}>
+      {schemas.length > 0 && <JsonLd data={schemas} />}
+
       {/* Page header */}
       <div style={{ marginBottom: 32, textAlign: "center" }}>
         <h1
@@ -56,6 +82,8 @@ export default function ToolLayout({
           {seoText}
         </div>
       )}
+
+      {faqs && faqs.length > 0 && <FaqSection items={faqs} />}
     </div>
   );
 }

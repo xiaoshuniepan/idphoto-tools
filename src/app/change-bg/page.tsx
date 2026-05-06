@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
 import ChangeBgTool from "@/components/ChangeBgTool";
+import JsonLd from "@/components/JsonLd";
 import { toolJsonLd } from "@/lib/jsonLd";
+import { changeBgFaqs } from "@/content/faqs";
 
 export const metadata: Metadata = {
   title: "证件照换底色 — 一键换白底蓝底红底",
@@ -30,11 +32,13 @@ const seoText = (
 export default function ChangeBgPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <ToolLayout
         title="证件照换底色"
         desc="AI 智能抠图，一键更换白底、蓝底、红底，支持自定义颜色。"
+        slug="/change-bg"
         seoText={seoText}
+        faqs={changeBgFaqs}
       >
         <ChangeBgTool />
       </ToolLayout>

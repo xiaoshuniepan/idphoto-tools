@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
-import { toolJsonLd } from "@/lib/jsonLd";
 import SignTool from "@/components/SignTool";
+import JsonLd from "@/components/JsonLd";
+import { toolJsonLd } from "@/lib/jsonLd";
+import { signFaqs } from "@/content/faqs";
 
 export const metadata: Metadata = {
   title: "电子签名生成 — 手写签名导出透明PNG",
@@ -30,14 +32,16 @@ const seoText = (
 export default function SignPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <ToolLayout
-      title="电子签名生成"
-      desc="鼠标或手指书写签名，一键导出透明背景 PNG，可直接叠加到文件、合同、证件上。"
-      seoText={seoText}
-    >
-      <SignTool />
-    </ToolLayout>
+        title="电子签名生成"
+        desc="鼠标或手指书写签名，一键导出透明背景 PNG，可直接叠加到文件、合同、证件上。"
+        slug="/sign"
+        seoText={seoText}
+        faqs={signFaqs}
+      >
+        <SignTool />
+      </ToolLayout>
     </>
   );
 }
