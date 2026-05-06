@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
+import { toolJsonLd } from "@/lib/jsonLd";
 import PrintLayoutTool from "@/components/PrintLayoutTool";
 
 export const metadata: Metadata = {
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://pickerme.cn/print-layout" },
 };
+
+const jsonLd = toolJsonLd("证件照排版打印", "https://pickerme.cn/print-layout", "一寸8张、二寸4张自动排版，输出300dpi高清图，直接发打印店");
 
 const seoText = (
   <>
@@ -58,12 +61,15 @@ const seoText = (
 
 export default function PrintLayoutPage() {
   return (
-    <ToolLayout
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ToolLayout
       title="证件照排版打印"
       desc="选择排版方案，上传证件照，自动生成可打印的高清排版图。支持一寸8张、二寸4张、A4排版等多种规格。"
       seoText={seoText}
     >
       <PrintLayoutTool />
     </ToolLayout>
+    </>
   );
 }

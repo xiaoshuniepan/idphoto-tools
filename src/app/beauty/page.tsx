@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
+import { toolJsonLd } from "@/lib/jsonLd";
 import BeautyTool from "@/components/BeautyTool";
 
 export const metadata: Metadata = {
@@ -16,6 +17,8 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://pickerme.cn/beauty" },
 };
+
+const jsonLd = toolJsonLd("证件照美颜", "https://pickerme.cn/beauty", "磨皮、美白、亮度、对比度一键调整，证件照美颜处理");
 
 const seoText = (
   <>
@@ -47,12 +50,15 @@ const seoText = (
 
 export default function BeautyPage() {
   return (
-    <ToolLayout
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ToolLayout
       title="证件照美颜"
       desc="磨皮、美白、亮度、对比度一键调整，内置多种预设效果，实时预览对比。"
       seoText={seoText}
     >
       <BeautyTool />
     </ToolLayout>
+    </>
   );
 }

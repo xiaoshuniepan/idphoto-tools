@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
+import { toolJsonLd } from "@/lib/jsonLd";
 import CompressTool from "@/components/CompressTool";
 
 export const metadata: Metadata = {
@@ -17,6 +18,8 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "https://pickerme.cn/compress" },
 };
+
+const jsonLd = toolJsonLd("证件照压缩", "https://pickerme.cn/compress", "快速压缩照片到30KB、100KB、200KB等指定大小，满足报名网站照片大小限制");
 
 const seoText = (
   <>
@@ -61,12 +64,15 @@ const seoText = (
 
 export default function CompressPage() {
   return (
-    <ToolLayout
+    <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <ToolLayout
       title="证件照压缩到指定KB"
       desc="选择目标大小（30KB/100KB/200KB等），上传照片，一键压缩。满足各类报名系统的照片大小限制。"
       seoText={seoText}
     >
       <CompressTool />
     </ToolLayout>
+    </>
   );
 }

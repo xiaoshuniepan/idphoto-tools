@@ -50,9 +50,27 @@ const tools = [
     icon: "✨",
     title: "证件照美颜",
     desc: "磨皮、美白、亮度、对比度一键调整，多种预设效果实时预览",
-    tag: "新上线",
+    tag: "美颜",
     tagColor: "#db2777",
     keywords: ["磨皮", "美白", "亮度", "对比度"],
+  },
+  {
+    href: "/sign",
+    icon: "✍️",
+    title: "电子签名",
+    desc: "鼠标或手指书写签名，导出透明背景 PNG，可叠加到文件、合同上",
+    tag: "新工具",
+    tagColor: "#0891b2",
+    keywords: ["手写签名", "透明PNG", "电子签名", "合同签名"],
+  },
+  {
+    href: "/remove-bg",
+    icon: "🪄",
+    title: "AI 通用抠图",
+    desc: "自动识别人像/商品/动物，一键去除背景，输出透明PNG，电商主图必备",
+    tag: "AI工具",
+    tagColor: "#7c3aed",
+    keywords: ["抠图", "去背景", "透明PNG", "电商主图"],
   },
 ];
 
@@ -65,7 +83,7 @@ const features = [
   {
     icon: "⚡",
     title: "秒速处理",
-    desc: "基于 WebAssembly 和 Canvas 技术，本地处理速度极快",
+    desc: "AI 云端抠图秒级响应，裁剪压缩本地 Canvas 即时完成",
   },
   {
     icon: "🆓",

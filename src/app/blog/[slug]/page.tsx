@@ -6,6 +6,7 @@ import { notFound } from "next/navigation";
 import { meta as sizeGuideMeta, default as SizeGuideContent } from "@/content/blog/id-photo-size-guide";
 import { meta as compressMeta, default as CompressContent } from "@/content/blog/compress-photo-for-exam";
 import { meta as homeTakeMeta, default as HomeTakeContent } from "@/content/blog/how-to-take-id-photo-at-home";
+import { meta as visaMeta, default as VisaContent } from "@/content/blog/visa-photo-requirements";
 
 const articleMap: Record<
   string,
@@ -17,6 +18,7 @@ const articleMap: Record<
   "id-photo-size-guide": { meta: sizeGuideMeta, Content: SizeGuideContent },
   "compress-photo-for-exam": { meta: compressMeta, Content: CompressContent },
   "how-to-take-id-photo-at-home": { meta: homeTakeMeta, Content: HomeTakeContent },
+  "visa-photo-requirements": { meta: visaMeta, Content: VisaContent },
 };
 
 export async function generateStaticParams() {
