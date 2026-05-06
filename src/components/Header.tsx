@@ -23,10 +23,12 @@ export default function Header() {
     setMenuOpen(false);
   }, [pathname]);
 
-  // Lock body scroll when menu is open
+  // Lock body scroll when menu is open — restore previous value on cleanup
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
   }, [menuOpen]);
 
   const isActive = (href: string) =>
@@ -213,7 +215,7 @@ export default function Header() {
                 marginBottom: 8,
               }}
             >
-              {navLinks.slice(0, -1).map((t) => (
+              {navLinks.filter((t) => t.href !== "/blog").map((t) => (
                 <Link
                   key={t.href}
                   href={t.href}

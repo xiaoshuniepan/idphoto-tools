@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import UploadZone from "./UploadZone";
 import DownloadBtn from "./DownloadBtn";
+import { removeBg } from "@/lib/removeBg";
+import { checkerboard } from "@/lib/styles";
 
 type Status = "idle" | "processing" | "done" | "error";
 
@@ -12,24 +14,23 @@ export default function RemoveBgTool() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Revoke blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      if (originalUrl) URL.revokeObjectURL(originalUrl);
+      if (resultUrl) URL.revokeObjectURL(resultUrl);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleFile = useCallback(async (file: File) => {
-    setOriginalUrl(URL.createObjectURL(file));
-    setResultUrl(null);
+    setOriginalUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
+    setResultUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
     setErrorMsg(null);
     setStatus("processing");
 
     try {
-      const form = new FormData();
-      form.append("image", file);
-
-      const res = await fetch("/api/remove-bg", { method: "POST", body: form });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error ?? `服务器错误 ${res.status}`);
-      }
-
-      const blob = await res.blob();
+      const blob = await removeBg(file);
       setResultUrl(URL.createObjectURL(blob));
       setStatus("done");
     } catch (err: unknown) {
@@ -52,7 +53,6 @@ export default function RemoveBgTool() {
         </div>
       )}
 
-      {/* Status */}
       {status === "processing" && (
         <div style={{ textAlign: "center", padding: "12px 20px", borderRadius: "var(--radius-md)", background: "#eff6ff", color: "#2563eb", fontSize: 14, fontWeight: 600 }}>
           🤖 AI 抠图中，请稍候…
@@ -64,10 +64,8 @@ export default function RemoveBgTool() {
         </div>
       )}
 
-      {/* Before / After */}
       {originalUrl && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 20 }}>
-          {/* Original */}
           <div style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
             <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--color-border)", fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)", background: "var(--color-bg-subtle)" }}>
               原图
@@ -77,18 +75,12 @@ export default function RemoveBgTool() {
             </div>
           </div>
 
-          {/* Result with checkerboard */}
           <div style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
             <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--color-border)", fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)", background: "var(--color-bg-subtle)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>去背景后（透明 PNG）</span>
               {resultUrl && <DownloadBtn url={resultUrl} filename="抠图结果.png" label="下载 PNG" />}
             </div>
-            <div style={{
-              padding: 12, minHeight: 120,
-              backgroundImage: "linear-gradient(45deg,#ddd 25%,transparent 25%),linear-gradient(-45deg,#ddd 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ddd 75%),linear-gradient(-45deg,transparent 75%,#ddd 75%)",
-              backgroundSize: "20px 20px",
-              backgroundPosition: "0 0,0 10px,10px -10px,-10px 0",
-            }}>
+            <div style={{ padding: 12, minHeight: 120, ...checkerboard() }}>
               {resultUrl ? (
                 <img src={resultUrl} alt="抠图结果" style={{ width: "100%", maxHeight: 360, objectFit: "contain", display: "block" }} />
               ) : (
@@ -107,7 +99,6 @@ export default function RemoveBgTool() {
         </div>
       )}
 
-      {/* Tips */}
       <p style={{ fontSize: 12, color: "var(--color-text-muted)", margin: 0, textAlign: "center" }}>
         💡 输出为透明背景 PNG · 可搭配<a href="/change-bg" style={{ color: "var(--color-primary)" }}>换底色工具</a>替换任意背景
       </p>

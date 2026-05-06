@@ -3,34 +3,45 @@ import { NextRequest, NextResponse } from "next/server";
 const API_KEY = process.env.BAIDU_API_KEY;
 const SECRET_KEY = process.env.BAIDU_SECRET_KEY;
 
+const MAX_BYTES = 4 * 1024 * 1024;
+
+function toBase64(buf: ArrayBuffer): string {
+  if (buf.byteLength > MAX_BYTES) {
+    throw new Error("图片超过 4MB，请先压缩后再上传");
+  }
+  return Buffer.from(buf).toString("base64");
+}
+
 // Module-level token cache — reused within the same warm serverless instance
 let tokenCache: { token: string; expiresAt: number } | null = null;
+let inflightToken: Promise<string> | null = null;
 
 async function getAccessToken(): Promise<string> {
-  if (tokenCache && Date.now() < tokenCache.expiresAt) {
+  if (tokenCache && Date.now() < tokenCache.expiresAt) return tokenCache.token;
+  // Coalesce concurrent cold-start requests into a single token fetch
+  if (inflightToken) return inflightToken;
+
+  inflightToken = (async () => {
+    const res = await fetch(
+      `https://aip.baidubce.com/oauth/2.0/token` +
+        `?grant_type=client_credentials` +
+        `&client_id=${API_KEY}` +
+        `&client_secret=${SECRET_KEY}`,
+      { method: "POST" }
+    );
+    if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
+    const data = await res.json();
+    if (data.error) throw new Error(`Baidu auth error: ${data.error_description}`);
+    tokenCache = {
+      token: data.access_token,
+      // Tokens are valid 30 days; refresh 1 day early
+      expiresAt: Date.now() + (data.expires_in - 86400) * 1000,
+    };
+    inflightToken = null;
     return tokenCache.token;
-  }
+  })();
 
-  const res = await fetch(
-    `https://aip.baidubce.com/oauth/2.0/token` +
-      `?grant_type=client_credentials` +
-      `&client_id=${API_KEY}` +
-      `&client_secret=${SECRET_KEY}`,
-    { method: "POST" }
-  );
-
-  if (!res.ok) throw new Error(`Token fetch failed: ${res.status}`);
-  const data = await res.json();
-
-  if (data.error) throw new Error(`Baidu auth error: ${data.error_description}`);
-
-  tokenCache = {
-    token: data.access_token,
-    // Tokens are valid 30 days; refresh 1 day early
-    expiresAt: Date.now() + (data.expires_in - 86400) * 1000,
-  };
-
-  return tokenCache.token;
+  return inflightToken;
 }
 
 export async function POST(req: NextRequest) {
@@ -54,22 +65,10 @@ export async function POST(req: NextRequest) {
       if (!file) {
         return NextResponse.json({ error: "缺少 image 字段" }, { status: 400 });
       }
-      // Enforce 4 MB limit (Baidu base64 limit)
-      if (file.size > 4 * 1024 * 1024) {
-        return NextResponse.json(
-          { error: "图片超过 4MB，请先压缩后再上传" },
-          { status: 413 }
-        );
-      }
-      const buf = await file.arrayBuffer();
-      imageBase64 = Buffer.from(buf).toString("base64");
+      imageBase64 = toBase64(await file.arrayBuffer());
     } else {
-      // Raw binary (for mini-program POST)
-      const buf = await req.arrayBuffer();
-      if (buf.byteLength > 4 * 1024 * 1024) {
-        return NextResponse.json({ error: "图片超过 4MB" }, { status: 413 });
-      }
-      imageBase64 = Buffer.from(buf).toString("base64");
+      // Raw binary — for mini-program POST
+      imageBase64 = toBase64(await req.arrayBuffer());
     }
 
     const token = await getAccessToken();
@@ -125,7 +124,8 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : "未知错误";
     console.error("[remove-bg]", msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+    const status = msg.includes("超过 4MB") ? 413 : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }
 

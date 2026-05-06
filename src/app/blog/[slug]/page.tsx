@@ -159,67 +159,6 @@ export default async function BlogArticlePage({
         </div>
       </div>
 
-      <style>{`
-        .article-body h2 {
-          font-size: 20px;
-          font-weight: 700;
-          color: var(--color-text);
-          margin: 32px 0 12px;
-          padding-bottom: 8px;
-          border-bottom: 2px solid var(--color-border);
-        }
-        .article-body h3 {
-          font-size: 16px;
-          font-weight: 700;
-          color: var(--color-text);
-          margin: 24px 0 8px;
-        }
-        .article-body p {
-          margin: 0 0 16px;
-          color: var(--color-text-muted);
-        }
-        .article-body ul, .article-body ol {
-          margin: 0 0 16px;
-          padding-left: 24px;
-          color: var(--color-text-muted);
-        }
-        .article-body li {
-          margin-bottom: 6px;
-        }
-        .article-body strong {
-          color: var(--color-text);
-          font-weight: 700;
-        }
-        .article-body a {
-          color: var(--color-primary);
-          text-decoration: underline;
-        }
-        .article-body table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 0 0 20px;
-          font-size: 14px;
-          overflow-x: auto;
-          display: block;
-        }
-        .article-body th {
-          background: var(--color-bg-subtle);
-          padding: 10px 14px;
-          text-align: left;
-          font-weight: 700;
-          border: 1px solid var(--color-border);
-          white-space: nowrap;
-          color: var(--color-text);
-        }
-        .article-body td {
-          padding: 9px 14px;
-          border: 1px solid var(--color-border);
-          color: var(--color-text-muted);
-        }
-        .article-body tr:nth-child(even) td {
-          background: var(--color-bg-subtle);
-        }
-      `}</style>
     </div>
   );
 }

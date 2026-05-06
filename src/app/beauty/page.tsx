@@ -53,12 +53,12 @@ export default function BeautyPage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <ToolLayout
-      title="证件照美颜"
-      desc="磨皮、美白、亮度、对比度一键调整，内置多种预设效果，实时预览对比。"
-      seoText={seoText}
-    >
-      <BeautyTool />
-    </ToolLayout>
+        title="证件照美颜"
+        desc="磨皮、美白、亮度、对比度一键调整，内置多种预设效果，实时预览对比。"
+        seoText={seoText}
+      >
+        <BeautyTool />
+      </ToolLayout>
     </>
   );
 }

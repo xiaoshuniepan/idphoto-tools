@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import ToolLayout from "@/components/ToolLayout";
 import RemoveBgTool from "@/components/RemoveBgTool";
+import { toolJsonLd } from "@/lib/jsonLd";
 
 export const metadata: Metadata = {
   title: "在线AI抠图 — 自动去除图片背景，免费透明PNG",
@@ -10,15 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "https://pickerme.cn/remove-bg" },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "WebApplication",
-  name: "在线AI抠图",
-  url: "https://pickerme.cn/remove-bg",
-  description: "AI智能抠图，自动去除图片背景，输出透明PNG",
-  applicationCategory: "UtilitiesApplication",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "CNY" },
-};
+const jsonLd = toolJsonLd("在线AI抠图", "https://pickerme.cn/remove-bg", "AI智能抠图，自动去除图片背景，输出透明PNG");
 
 const seoText = (
   <>
