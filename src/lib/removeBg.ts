@@ -5,7 +5,11 @@ export async function removeBg(file: File): Promise<Blob> {
   const res = await fetch("/api/remove-bg", { method: "POST", body: form });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error((data as { error?: string }).error ?? `服务器错误 ${res.status}`);
+    const errMsg = (data as { error?: string }).error;
+    if (res.status === 429) {
+      throw new Error(errMsg ?? "请求过于频繁，请稍后再试");
+    }
+    throw new Error(errMsg ?? `服务器错误 ${res.status}`);
   }
   return res.blob();
 }

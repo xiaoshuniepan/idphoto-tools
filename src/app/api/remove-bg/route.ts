@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "@/lib/rateLimit";
 
 const API_KEY = process.env.BAIDU_API_KEY;
 const SECRET_KEY = process.env.BAIDU_SECRET_KEY;
@@ -50,6 +51,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "BAIDU_API_KEY / BAIDU_SECRET_KEY 未配置" },
       { status: 500 }
+    );
+  }
+
+  // Rate limit by IP — protect Baidu API quota from abuse
+  const ip = getClientIp(req);
+  const rl = await checkRateLimit(ip);
+  if (!rl.success) {
+    const retryAfter = Math.max(1, Math.ceil((rl.reset - Date.now()) / 1000));
+    return NextResponse.json(
+      { error: `请求过于频繁，请 ${retryAfter} 秒后再试` },
+      {
+        status: 429,
+        headers: {
+          "X-RateLimit-Limit": String(rl.limit),
+          "X-RateLimit-Remaining": String(rl.remaining),
+          "X-RateLimit-Reset": String(rl.reset),
+          "Retry-After": String(retryAfter),
+          "Access-Control-Allow-Origin": "*",
+        },
+      }
     );
   }
 
