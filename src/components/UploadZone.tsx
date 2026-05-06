@@ -82,7 +82,7 @@ export default function UploadZone({
         {label}
       </div>
       <div style={{ fontSize: 13, color: "var(--color-text-muted)" }}>
-        支持 JPG、PNG、WEBP 格式，建议小于 10MB
+        支持 JPG、PNG、WEBP 格式 · 大图自动压缩
       </div>
     </label>
   );

@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import UploadZone from "./UploadZone";
 import DownloadBtn from "./DownloadBtn";
 import { removeBg } from "@/lib/removeBg";
+import { compressImageIfNeeded } from "@/lib/compressImage";
 import { checkerboard } from "@/lib/styles";
 
 type Status = "idle" | "processing" | "done" | "error";
@@ -30,7 +31,8 @@ export default function RemoveBgTool() {
     setStatus("processing");
 
     try {
-      const blob = await removeBg(file);
+      const compressed = await compressImageIfNeeded(file);
+      const blob = await removeBg(compressed);
       setResultUrl(URL.createObjectURL(blob));
       setStatus("done");
     } catch (err: unknown) {

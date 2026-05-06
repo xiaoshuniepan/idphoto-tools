@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import UploadZone from "./UploadZone";
 import DownloadBtn from "./DownloadBtn";
 import { removeBg } from "@/lib/removeBg";
+import { compressImageIfNeeded } from "@/lib/compressImage";
 import { checkerboard } from "@/lib/styles";
 
 type Status = "idle" | "removing_bg" | "done" | "error";
@@ -86,7 +87,8 @@ export default function ChangeBgTool() {
       setStatus("removing_bg");
 
       try {
-        const blob = await removeBg(file);
+        const compressed = await compressImageIfNeeded(file);
+        const blob = await removeBg(compressed);
         const bitmap = await createImageBitmap(blob);
         fgBitmap.current = bitmap;
         setStatus("done");
