@@ -3,7 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import UploadZone from "./UploadZone";
 import DownloadBtn from "./DownloadBtn";
-import { removeBg } from "@/lib/removeBg";
+import ModelProgress from "./ModelProgress";
+import { useRemoveBg } from "@/lib/onnx";
 import { compressImageIfNeeded } from "@/lib/compressImage";
 import { checkerboard } from "@/lib/styles";
 
@@ -21,9 +22,9 @@ const PRESET_COLORS = [
 function StatusBadge({ status }: { status: Status }) {
   const map: Record<Status, { text: string; color: string } | null> = {
     idle: null,
-    removing_bg: { text: "🤖 AI 抠图中，请稍候…", color: "#2563eb" },
+    removing_bg: null, // Handled by ModelProgress instead
     done: { text: "✅ 处理完成", color: "#16a34a" },
-    error: { text: "❌ 处理失败，请重试", color: "#dc2626" },
+    error: null, // Handled by ModelProgress
   };
   const info = map[status];
   if (!info) return null;
@@ -49,57 +50,65 @@ export default function ChangeBgTool() {
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Cache decoded foreground as ImageBitmap to avoid re-decoding on every color change
+  // Cache decoded foreground as ImageBitmap for instant color changes
   const fgBitmap = useRef<ImageBitmap | null>(null);
 
-  // Revoke blob URLs on unmount to prevent memory leaks
+  const onnx = useRemoveBg();
+
+  useEffect(() => {
+    onnx.checkCache();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Revoke blob URLs on unmount
   useEffect(() => {
     return () => {
       if (originalUrl) URL.revokeObjectURL(originalUrl);
-      if (resultUrl) URL.revokeObjectURL(resultUrl);
       fgBitmap.current?.close();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyBackground = useCallback((bitmap: ImageBitmap, color: string): string => {
-    const canvas = document.createElement("canvas");
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("no canvas ctx");
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(bitmap, 0, 0);
-    return canvas.toDataURL("image/jpeg", 0.95);
-  }, []);
+  const applyBackground = useCallback(
+    (bitmap: ImageBitmap, color: string): string => {
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("no canvas ctx");
+      ctx.fillStyle = color;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap, 0, 0);
+      return canvas.toDataURL("image/jpeg", 0.95);
+    },
+    [],
+  );
 
   const handleFile = useCallback(
     async (file: File) => {
-      // Revoke previous blob URLs before creating new ones
-      setOriginalUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return URL.createObjectURL(file); });
-      setResultUrl((prev) => { if (prev) URL.revokeObjectURL(prev); return null; });
+      setOriginalUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return URL.createObjectURL(file);
+      });
+      setResultUrl(null);
       fgBitmap.current?.close();
       fgBitmap.current = null;
-      setErrorMsg(null);
       setStatus("removing_bg");
 
       try {
         const compressed = await compressImageIfNeeded(file);
-        const blob = await removeBg(compressed);
+        const blob = await onnx.removeBg(compressed);
         const bitmap = await createImageBitmap(blob);
         fgBitmap.current = bitmap;
         setStatus("done");
         const dataUrl = applyBackground(bitmap, bgColor);
         setResultUrl(dataUrl);
-      } catch (err: unknown) {
-        setErrorMsg(err instanceof Error ? err.message : "未知错误");
+      } catch {
         setStatus("error");
       }
     },
-    [bgColor, applyBackground]
+    [bgColor, applyBackground, onnx],
   );
 
   const handleColorChange = useCallback(
@@ -108,7 +117,7 @@ export default function ChangeBgTool() {
       if (!fgBitmap.current) return;
       setResultUrl(applyBackground(fgBitmap.current, color));
     },
-    [applyBackground]
+    [applyBackground],
   );
 
   return (
@@ -143,20 +152,8 @@ export default function ChangeBgTool() {
 
       <StatusBadge status={status} />
 
-      {status === "error" && errorMsg && (
-        <div
-          style={{
-            padding: "10px 16px",
-            borderRadius: "var(--radius-md)",
-            background: "#fee2e2",
-            border: "1px solid #fca5a5",
-            fontSize: 13,
-            color: "#991b1b",
-          }}
-        >
-          {errorMsg}
-        </div>
-      )}
+      {/* ONNX progress (model download + inference) */}
+      <ModelProgress status={onnx.status} progress={onnx.progress} />
 
       {originalUrl && (
         <div
@@ -167,17 +164,47 @@ export default function ChangeBgTool() {
           }}
         >
           {/* Original */}
-          <div style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
-            <div style={{ padding: "10px 16px", borderBottom: "1px solid var(--color-border)", fontSize: 13, fontWeight: 600, color: "var(--color-text-muted)", background: "var(--color-bg-subtle)" }}>
+          <div
+            style={{
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-lg)",
+              overflow: "hidden",
+            }}
+          >
+            <div
+              style={{
+                padding: "10px 16px",
+                borderBottom: "1px solid var(--color-border)",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--color-text-muted)",
+                background: "var(--color-bg-subtle)",
+              }}
+            >
               原图
             </div>
             <div style={{ padding: 12, ...checkerboard(16) }}>
-              <img src={originalUrl} alt="原图" style={{ width: "100%", maxHeight: 320, objectFit: "contain", display: "block" }} />
+              <img
+                src={originalUrl}
+                alt="原图"
+                style={{
+                  width: "100%",
+                  maxHeight: 320,
+                  objectFit: "contain",
+                  display: "block",
+                }}
+              />
             </div>
           </div>
 
           {/* Result */}
-          <div style={{ border: "1px solid var(--color-border)", borderRadius: "var(--radius-lg)", overflow: "hidden" }}>
+          <div
+            style={{
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-lg)",
+              overflow: "hidden",
+            }}
+          >
             <div
               style={{
                 padding: "10px 16px",
@@ -192,13 +219,37 @@ export default function ChangeBgTool() {
               }}
             >
               <span>处理后</span>
-              {resultUrl && <DownloadBtn url={resultUrl} filename="证件照换底色.jpg" label="下载" />}
+              {resultUrl && (
+                <DownloadBtn
+                  url={resultUrl}
+                  filename="证件照换底色.jpg"
+                  label="下载"
+                />
+              )}
             </div>
             <div style={{ padding: 12, background: bgColor, minHeight: 120 }}>
               {resultUrl ? (
-                <img src={resultUrl} alt="处理后" style={{ width: "100%", maxHeight: 320, objectFit: "contain", display: "block" }} />
+                <img
+                  src={resultUrl}
+                  alt="处理后"
+                  style={{
+                    width: "100%",
+                    maxHeight: 320,
+                    objectFit: "contain",
+                    display: "block",
+                  }}
+                />
               ) : (
-                <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", color: "var(--color-text-muted)", fontSize: 14 }}>
+                <div
+                  style={{
+                    height: 120,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: "var(--color-text-muted)",
+                    fontSize: 14,
+                  }}
+                >
                   {status === "removing_bg" ? "处理中…" : "上传照片后显示结果"}
                 </div>
               )}
@@ -216,10 +267,24 @@ export default function ChangeBgTool() {
             padding: 20,
           }}
         >
-          <div style={{ fontSize: 14, fontWeight: 700, color: "var(--color-text)", marginBottom: 14 }}>
+          <div
+            style={{
+              fontSize: 14,
+              fontWeight: 700,
+              color: "var(--color-text)",
+              marginBottom: 14,
+            }}
+          >
             选择底色
           </div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+              alignItems: "center",
+            }}
+          >
             {PRESET_COLORS.map((c) => (
               <button
                 key={c.value}
@@ -230,7 +295,10 @@ export default function ChangeBgTool() {
                   height: 44,
                   borderRadius: "var(--radius-md)",
                   background: c.value,
-                  border: bgColor === c.value ? "3px solid var(--color-primary)" : "2px solid var(--color-border)",
+                  border:
+                    bgColor === c.value
+                      ? "3px solid var(--color-primary)"
+                      : "2px solid var(--color-border)",
                   cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
@@ -251,9 +319,20 @@ export default function ChangeBgTool() {
                 value={bgColor}
                 onChange={(e) => handleColorChange(e.target.value)}
                 title="自定义颜色"
-                style={{ width: 44, height: 44, borderRadius: "var(--radius-md)", border: "2px solid var(--color-border)", cursor: "pointer", padding: 2 }}
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: "var(--radius-md)",
+                  border: "2px solid var(--color-border)",
+                  cursor: "pointer",
+                  padding: 2,
+                }}
               />
-              <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>自定义</span>
+              <span
+                style={{ fontSize: 12, color: "var(--color-text-muted)" }}
+              >
+                自定义
+              </span>
             </div>
           </div>
         </div>
@@ -261,9 +340,24 @@ export default function ChangeBgTool() {
 
       {resultUrl && (
         <div style={{ textAlign: "center" }}>
-          <DownloadBtn url={resultUrl} filename="证件照换底色.jpg" label="下载处理后的证件照" />
+          <DownloadBtn
+            url={resultUrl}
+            filename="证件照换底色.jpg"
+            label="下载处理后的证件照"
+          />
         </div>
       )}
+
+      <p
+        style={{
+          fontSize: 12,
+          color: "var(--color-text-muted)",
+          margin: 0,
+          textAlign: "center",
+        }}
+      >
+        💡 全程浏览器本地 AI 处理，图片不会上传到任何服务器
+      </p>
     </div>
   );
 }
